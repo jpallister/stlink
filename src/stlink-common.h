@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   stlink-common.h
  * Bulk import from stlink-hw.h
- * 
+ *
  * This should contain all the common top level stlink interfaces, regardless
  * of how the backend does the work....
  */
@@ -66,7 +66,7 @@ extern "C" {
 #define STLINK_DEBUG_WRITEDEBUGREG	0x0f
 #define STLINK_DEBUG_ENTER_SWD		0xa3
 #define STLINK_DEBUG_ENTER_JTAG	0x00
-    
+
     // TODO - possible poor names...
 #define STLINK_SWD_ENTER 0x30
 #define STLINK_SWD_READCOREID 0x32  // TBD
@@ -85,6 +85,7 @@ extern "C" {
 #define STM32VL_CORE_ID 0x1ba01477
 #define STM32L_CORE_ID 0x2ba01477
 #define STM32F4_CORE_ID 0x2ba01477
+#define STM32F0_CORE_ID 0x0bb11477
 #define CORE_M3_R1 0x1BA00477
 #define CORE_M3_R2 0x4BA00477
 #define CORE_M4_R0 0x2BA01477
@@ -127,9 +128,9 @@ extern "C" {
 	uint32_t sram_size;
 	uint32_t bootrom_base, bootrom_size;
     } chip_params_t;
-    
-    
-    // These maps are from a combination of the Programming Manuals, and 
+
+
+    // These maps are from a combination of the Programming Manuals, and
     // also the Reference manuals.  (flash size reg is normally in ref man)
  static const chip_params_t devices[] = {
         { // table 2, PM0063
@@ -237,7 +238,7 @@ extern "C" {
         }
  };
 
-    
+
     typedef struct {
         uint32_t r[16];
         uint32_t s[32];
@@ -254,7 +255,7 @@ extern "C" {
     } reg;
 
     typedef uint32_t stm32_addr_t;
-    
+
     typedef struct _cortex_m3_cpuid_ {
         uint16_t implementer_id;
         uint16_t variant;
@@ -343,7 +344,7 @@ extern "C" {
 #define STM32L_SRAM_SIZE (16 * 1024)
         stm32_addr_t sram_base;
         size_t sram_size;
-        
+
         // bootloader
         stm32_addr_t sys_base;
         size_t sys_size;
@@ -387,7 +388,7 @@ extern "C" {
     int stlink_fwrite_flash(stlink_t *sl, const char* path, stm32_addr_t addr);
     int stlink_fwrite_sram(stlink_t *sl, const char* path, stm32_addr_t addr);
     int stlink_verify_write_flash(stlink_t *sl, stm32_addr_t address, uint8_t *data, unsigned length);
-    
+
     // PUBLIC
     uint32_t stlink_chip_id(stlink_t *sl);
     void stlink_cpu_id(stlink_t *sl, cortex_m3_cpuid_t *cpuid);
@@ -413,7 +414,7 @@ extern "C" {
 
 
 #include "stlink-sg.h"
-#include "stlink-usb.h"    
+#include "stlink-usb.h"
 
 
 
