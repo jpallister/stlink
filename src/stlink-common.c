@@ -1695,6 +1695,7 @@ int stlink_write_flash(stlink_t *sl, stm32_addr_t addr, uint8_t* base, unsigned 
                 memcpy(sl->q_buf, saved_ram + off, 1024);
                 stlink_write_mem32(sl, sl->sram_base + off, 1024);
             }
+            free(saved_ram);
         }
     } else {
         WLOG("unknown coreid, not sure how to write: %x\n", sl->core_id);
