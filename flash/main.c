@@ -112,7 +112,7 @@ int main(int ac, char** av)
   }
   else /* stlinkv2 */
   {
-    sl = stlink_open_usb(50);
+    sl = stlink_open_usb(50, 0);
     if (sl == NULL) goto on_error;
     sl->verbose = 50;
   }

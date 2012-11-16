@@ -704,12 +704,15 @@ stlink_backend_t _stlink_usb_backend = {
 };
 
 
-stlink_t* stlink_open_usb(const int verbose) {
+stlink_t* stlink_open_usb(const int verbose, const int dev_num) {
     stlink_t* sl = NULL;
     struct stlink_libusb* slu = NULL;
     int error = -1;
+    unsigned i;
     libusb_device** devs = NULL;
-    int config;
+    struct libusb_device_descriptor desc;
+    int config, n_seen=0;
+    size_t n_devs;
 
     sl = malloc(sizeof (stlink_t));
     slu = malloc(sizeof (struct stlink_libusb));
@@ -728,15 +731,45 @@ stlink_t* stlink_open_usb(const int verbose) {
         WLOG("failed to init libusb context, wrong version of libraries?\n");
         goto on_error;
     }
+
+    n_devs = libusb_get_device_list(slu->libusb_ctx, &devs);
+
+    for(i = 0; i < n_devs; ++i)
+    {
+        libusb_get_device_descriptor(devs[i], &desc);
+
+        if(desc.idVendor == USB_ST_VID && desc.idProduct == USB_STLINK_32L_PID)
+        {
+            n_seen++;
+            if(n_seen-1 == dev_num)
+            {
+                error = libusb_open(devs[i], &slu->usb_handle);
+                break;
+            }
+        }
+        if(desc.idVendor == USB_ST_VID && desc.idProduct == USB_STLINK_PID)
+        {
+            n_seen++;
+            if(n_seen-1 == dev_num)
+            {
+                slu->protocoll = 1;
+                error = libusb_open(devs[i], &slu->usb_handle);
+                break;
+            }
+        }
+    }
     
-    slu->usb_handle = libusb_open_device_with_vid_pid(slu->libusb_ctx, USB_ST_VID, USB_STLINK_32L_PID);
-    if (slu->usb_handle == NULL) {
-	slu->usb_handle = libusb_open_device_with_vid_pid(slu->libusb_ctx, USB_ST_VID, USB_STLINK_PID);
-	if (slu->usb_handle == NULL) {
-	    WLOG("Couldn't find any ST-Link/V2 devices\n");
-	    goto on_error;
-	}
-	slu->protocoll = 1;
+    if(error < 0)
+    {
+        WLOG("Error while opening device\n");
+        goto on_libusb_error;
+    }
+
+    if(n_seen-1 != dev_num)
+    {
+        error = -1;
+        WLOG("Could not find any devices\n");
+        goto on_libusb_error;
     }
 
     if (libusb_kernel_driver_active(slu->usb_handle, 0) == 1) {

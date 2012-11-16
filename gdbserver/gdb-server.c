@@ -47,6 +47,7 @@ typedef struct _st_state_t {
     char devicename[100];
     int logging_level;
 	int listen_port;
+	int core_id;
 } st_state_t;
 
 
@@ -62,6 +63,7 @@ int parse_options(int argc, char** argv, st_state_t *st) {
         {"stlink_version", required_argument, NULL, 's'},
         {"stlinkv1", no_argument, NULL, '1'},
 		{"listen_port", required_argument, NULL, 'p'},
+		{"core_id", required_argument, NULL, 'c'},
         {0, 0, 0, 0},
     };
 	const char * help_str = "%s - usage:\n\n"
@@ -73,6 +75,7 @@ int parse_options(int argc, char** argv, st_state_t *st) {
 	"  -s X, --stlink_version=X\n"
 	"\t\t\tChoose what version of stlink to use, (defaults to 2)\n"
 	"  -1, --stlinkv1\tForce stlink version 1\n"
+	"  -c 0xXXXXXXXX, --core_id=0xXXXXXXXX\tFind board with core id\n"
 	"  -p 4242, --listen_port=1234\n"
 	"\t\t\tSet the gdb server listen port. "
 	"(default port: " STRINGIFY(DEFAULT_GDB_LISTEN_PORT) ")\n"
@@ -82,7 +85,7 @@ int parse_options(int argc, char** argv, st_state_t *st) {
     int option_index = 0;
     int c;
     int q;
-    while ((c = getopt_long(argc, argv, "hv::d:s:1p:", long_options, &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hv::d:s:1p:c:", long_options, &option_index)) != -1) {
         switch (c) {
         case 0:
             printf("XXXXX Shouldn't really normally come here, only if there's no corresponding option\n");
@@ -129,6 +132,9 @@ int parse_options(int argc, char** argv, st_state_t *st) {
 			}
 			st->listen_port = q;
 			break;
+		case 'c':
+			sscanf(optarg, "0x%x", &q);
+			st->core_id = q;
         }
     }
 
@@ -145,6 +151,7 @@ int parse_options(int argc, char** argv, st_state_t *st) {
 int main(int argc, char** argv) {
 
 	stlink_t *sl = NULL;
+	int dev_num = 0;
 
 	st_state_t state;
 	memset(&state, 0, sizeof(state));
@@ -152,17 +159,30 @@ int main(int argc, char** argv) {
 	state.stlink_version = 2;
 	state.logging_level = DEFAULT_LOGGING_LEVEL;
 	state.listen_port = DEFAULT_GDB_LISTEN_PORT;
+	state.core_id = -1;
 	parse_options(argc, argv, &state);
-	switch (state.stlink_version) {
-	case 2:
-		sl = stlink_open_usb(state.logging_level);
-		if(sl == NULL) return 1;
-		break;
-	case 1:
-		sl = stlink_v1_open(state.logging_level);
-		if(sl == NULL) return 1;
-		break;
-    }
+
+	while(1) {
+		switch (state.stlink_version) {
+		case 2:
+			sl = stlink_open_usb(state.logging_level, dev_num);
+			if(sl == NULL) return 1;
+			break;
+		case 1:
+			sl = stlink_v1_open(state.logging_level);
+			if(sl == NULL) return 1;
+			break;
+	    }
+
+	    if(sl->core_id == state.core_id || state.core_id == -1)
+	    	break;
+	    
+		printf("Core ID isn't what was requested, closing and trying next device\n");
+
+	    stlink_close(sl);
+
+	    dev_num++;
+	}
 
 	printf("Chip ID is %08x, Core ID is  %08x.\n", sl->chip_id, sl->core_id);
 
