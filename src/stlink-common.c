@@ -1648,14 +1648,12 @@ int stlink_write_flash(stlink_t *sl, stm32_addr_t addr, uint8_t* base, unsigned 
         ILOG("Starting Flash write for VL core id\n");
 
         /* Read RAM so we can restore it to its previous state */
-        if(sl->core_id == STM32F0_CORE_ID) {
-            ILOG("Saving RAM so it can be restored later\n");
-            saved_ram = malloc(sl->sram_size);
+        ILOG("Saving RAM so it can be restored later\n");
+        saved_ram = malloc(sl->sram_size);
 
-            for(off = 0; off < sl->sram_size; off += 1024) {
-                stlink_read_mem32(sl, sl->sram_base + off, 1024);
-                memcpy(saved_ram + off, sl->q_buf, 1024);
-            }
+        for(off = 0; off < sl->sram_size; off += 1024) {
+            stlink_read_mem32(sl, sl->sram_base + off, 1024);
+            memcpy(saved_ram + off, sl->q_buf, 1024);
         }
 
         /* flash loader initialization */
@@ -1689,14 +1687,12 @@ int stlink_write_flash(stlink_t *sl, stm32_addr_t addr, uint8_t* base, unsigned 
         fprintf(stdout, "\n");
 
         /* Write RAM to restore it to its previous state */
-        if(sl->core_id == STM32F0_CORE_ID) {
-            ILOG("Restoring RAM\n");
-            for(off = 0; off < sl->sram_size; off += 1024) {
-                memcpy(sl->q_buf, saved_ram + off, 1024);
-                stlink_write_mem32(sl, sl->sram_base + off, 1024);
-            }
-            free(saved_ram);
+        ILOG("Restoring RAM\n");
+        for(off = 0; off < sl->sram_size; off += 1024) {
+            memcpy(sl->q_buf, saved_ram + off, 1024);
+            stlink_write_mem32(sl, sl->sram_base + off, 1024);
         }
+        free(saved_ram);
     } else {
         WLOG("unknown coreid, not sure how to write: %x\n", sl->core_id);
         return -1;
