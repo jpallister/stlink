@@ -1774,6 +1774,8 @@ int run_flash_loader(stlink_t *sl, flash_loader_t* fl, stm32_addr_t target, cons
       stlink_write_reg(sl, 0, 3); /* flash bank 0 (input) */
       stlink_write_reg(sl, fl->loader_addr, 15); /* pc register */
 
+      stlink_write_reg(sl, 0x01000000, 16); // Fix xPSR register?
+
     }else if (sl->core_id == STM32F0_CORE_ID) {
 
       size_t count = size / sizeof(uint16_t);
@@ -1801,6 +1803,7 @@ int run_flash_loader(stlink_t *sl, flash_loader_t* fl, stm32_addr_t target, cons
 		stlink_write_reg(sl, count, 2); /* count (32 bits words) */
 		stlink_write_reg(sl, fl->loader_addr, 15); /* pc register */
 
+      stlink_write_reg(sl, 0x01000000, 16); // Fix xPSR register?
     } else {
       fprintf(stderr, "unknown coreid: 0x%x\n", sl->core_id);
       return -1;
